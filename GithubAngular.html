@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Github Repo search</title>
+</head>
+<body>
+<h1>Github Repo Search.</h1>
+<div ng-app="githubApp"  ng-controller = "githubCtrl">
+<span>Enter name to retrive the GitHub repositories: </span> <input type="text" id="text" ng-model="text"/> <input type="button" id="search" ng-click="searchFunc()" value="Search"/><input type="button" id="cancel" ng-click="cancel()" value="Cancel"/>
+<br>
+<br>
+<div id="result" ng-bind="data">
+
+</div>
+    <table ng-if="success" >
+
+        <tr  class="dataTable" ng-repeat ="x in res" data="x" repo ></tr>
+    </table>
+
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script>
+<script>
+    var app= angular.module('githubApp',[]);
+
+    app.directive("repo", function(){
+
+        var directive = {};
+        directive.restrict = 'EA';
+        directive.scope = {
+            display : "=data"
+        }
+        directive.template = " <td style='padding : 5px 5px 5px 5px'>{{display.name}}</td><td style='padding : 5px 5px 5px 5px'><a href={{display.html_url}} alt='Link does not exist'>{{display.html_url}}</a></td>";
+
+
+        return directive;
+    });
+
+
+
+
+    app.controller("githubCtrl", function($scope, $http){
+
+        $scope.searchFunc = function(){
+            //console.log("Search clicked");
+            //console.log("Data: " + $scope.text);
+            //$scope.data = $scope.text;
+            $scope.cancel();
+            if($scope.text && $scope.text.trim()){
+                //$scope.data = $scope.text;
+                var url = "https://api.github.com/users/"+$scope.text.trim()+"/repos";
+                $http({
+                    method : "GET",
+                    url : url,
+                    data: {access_token:"f6aecb4fa190bffdf838f530325576e9787994bc"}
+                }).then($scope.processSuccess, $scope.processError);
+            }else{
+                var ele = angular.element( document.querySelector( '#result' ) );
+                ele.append("<h2 style = 'color:red'>Input Required</h2>");
+            }
+            $scope.text='';
+
+        }
+        $scope.processSuccess = function(response){
+            //console.log(response.data);
+            $scope.res = response.data;
+            if($scope.res.length){
+                $scope.success = true;
+                var ele = angular.element( document.querySelector( '#result' ) );
+                var resultData = "<h2>There are "+ $scope.res.length + " repositories found under "+ $scope.res[0].owner.login + ".</h2>";
+
+                resultData += '<a href="'+$scope.res[0].owner.html_url + '  " target="_blank"><img src="'+$scope.res[0].owner.avatar_url + '" alt="Image Not found" style="width:100px; height:100px"> </a>';
+
+
+
+                        ele.append(resultData);
+            }else{
+                var ele = angular.element( document.querySelector( '#result' ) );
+                ele.append("No Results Found.");
+            }
+        }
+
+        $scope.processError = function(response){
+            console.log(response.status);
+           var ele = angular.element( document.querySelector( '#result' ) );
+           ele.append("<p  style = 'color:red'>Error<br>Error code: " + response.status+ "<br>Error Message: " + response.statusText + "</p>");
+
+        }
+
+
+        $scope.cancel = function(){
+            var ele = angular.element( document.querySelector( '#result' ) );
+            var table = angular.element( document.querySelector( '.dataTable' ) );
+            ele.empty();
+            //table.removeAll();
+            $scope.success = false;
+            //$("#result").empty().css("color", "black");
+        }
+
+
+    });
+
+
+</script>
+</body>
+</html>
